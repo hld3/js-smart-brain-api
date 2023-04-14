@@ -1,8 +1,12 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+// const bcrypt = require('bcrypt-nodejs')
+const cors = require('cors')
 
 const app = express()
 app.use(bodyParser.json())
+app.use(cors())
+
 const db = {
     users: [
         {
@@ -25,7 +29,7 @@ const db = {
 }
 
 app.get('/', (req, res) => {
-    res.send('this is working')
+    res.send(db.users)
 })
 
 app.post('/signin', (req, res) => {
@@ -65,7 +69,7 @@ app.put('/image', (req, res) => {
     const user = db.users.filter(user => {
         return id === parseInt(user.id)
     })
-    if(user.length > 0) {
+    if (user.length > 0) {
         user[0].entries++
         res.json(user[0].entries)
     } else {
