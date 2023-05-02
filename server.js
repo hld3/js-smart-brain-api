@@ -4,14 +4,14 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const knex = require('knex')({
   client: 'pg',
-  connection: 'postgres://hdodson:hdodson@127.0.0.1:5432/smart-brain',
+  connection: 'postgres://vagrant:vagrant@127.0.0.1:5432/smart-brain',
 });
 
-console.log(JSON.stringify(knex.client.config.connection));
-const query = knex
-  .select()
-  .from('users')
-  .then((data) => console.log(data));
+// console.log(JSON.stringify(knex.client.config.connection));
+// const query = knex
+//   .select()
+//   .from('users')
+//   .then((data) => console.log(data));
 
 const app = express();
 app.use(bodyParser.json());
@@ -55,21 +55,32 @@ app.post('/signin', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { name, email, password } = req.body;
-  knex('users').insert({
-    name: name,
-    email: email,
-    joined: new Date(),
-  });
-  res.json('User Created');
+  knex('users')
+    .returning('*')
+    .insert({
+      name: name,
+      email: email,
+      joined: new Date(),
+    })
+    .then((user) => res.json(user[0]))
+    .catch((err) =>
+      res.status(400).json('There was an error during registration.')
+    );
 });
 
 app.get('/profile/:id', (req, res) => {
   let { id } = req.params;
   id = parseInt(id);
-  const user = db.users.filter((user) => {
-    return id === parseInt(user.id);
-  });
-  user.length !== 0 ? res.json(user) : res.status(404).json('user not found');
+  knex
+    .select()
+    .from('users')
+    .where({ id })
+    .then((user) => {
+      user.length > 0
+        ? res.json(user[0])
+        : res.status(400).json('User not found.');
+    })
+    .catch((err) => res.status(400).json('Error retrieving user.'));
 });
 
 app.put('/image', (req, res) => {
