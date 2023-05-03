@@ -86,15 +86,16 @@ app.get('/profile/:id', (req, res) => {
 app.put('/image', (req, res) => {
   let { id } = req.body;
   id = parseInt(id);
-  const user = db.users.filter((user) => {
-    return id === parseInt(user.id);
-  });
-  if (user.length > 0) {
-    user[0].entries++;
-    res.json(user[0].entries);
-  } else {
-    res.status(404).json('user not found');
-  }
+  knex('users')
+    .returning('*')
+    .where({ id })
+    .increment('entries', 1)
+    .then((user) => {
+      user.length > 0
+        ? res.json(user[0])
+        : res.status(400).json('User not found');
+    })
+    .catch((err) => res.status(400).json('Error incrementing entries.'));
 });
 
 app.listen(3000, () => {
