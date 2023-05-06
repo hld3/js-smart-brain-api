@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-// const bcrypt = require('bcrypt-nodejs')
+const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
 const knex = require('knex')({
   client: 'pg',
@@ -8,64 +8,64 @@ const knex = require('knex')({
 });
 
 // console.log(JSON.stringify(knex.client.config.connection));
-// const query = knex
-//   .select()
-//   .from('users')
-//   .then((data) => console.log(data));
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
-
-const db = {
-  users: [
-    {
-      id: 123,
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'cookies',
-      entries: 0,
-      joined: new Date(),
-    },
-    {
-      id: 124,
-      name: 'Sally',
-      email: 'sally@gmail.com',
-      password: 'bananas',
-      entries: 0,
-      joined: new Date(),
-    },
-  ],
-};
 
 app.get('/', (req, res) => {
   res.send(db.users);
 });
 
 app.post('/signin', (req, res) => {
-  if (
-    req.body.email === db.users[0].email &&
-    req.body.password === db.users[0].password
-  ) {
-    res.json(db.users[0]);
-  } else {
-    res.status(400).json('error logging in');
-  }
+  knex
+    .select()
+    .from('login')
+    .where({ email: req.body.email })
+    .then((users) => {
+      if (users.length > 0) {
+        const isUser = bcrypt.compareSync(req.body.password, users[0].hash);
+        if (isUser) {
+          res.json('logged in');
+        } else {
+          res.status(400).json('wrong credentials.');
+        }
+      } else {
+        res.status(400).json('Error signing in.');
+      }
+    })
+    .catch((err) => console.log('wrong credentials.'));
 });
 
 app.post('/register', (req, res) => {
   const { name, email, password } = req.body;
-  knex('users')
-    .returning('*')
-    .insert({
-      name: name,
-      email: email,
-      joined: new Date(),
-    })
-    .then((user) => res.json(user[0]))
-    .catch((err) =>
-      res.status(400).json('There was an error during registration.')
-    );
+  const hash = bcrypt.hashSync(password);
+
+  knex.transaction((trx) => {
+    trx
+      .insert({
+        hash: hash,
+        email: email,
+      })
+      .into('login')
+      .returning('email')
+      .then((loginEmail) => {
+        trx
+          .insert({
+            name: name,
+            email: loginEmail[0].email,
+            joined: new Date(),
+          })
+          .into('users')
+          .returning('*')
+          .then((user) => res.json(user[0]))
+          .catch((err) =>
+            res.status(400).json('There was an error during registration.')
+          );
+      })
+      .then(trx.commit)
+      .catch(trx.rollback);
+  });
 });
 
 app.get('/profile/:id', (req, res) => {
