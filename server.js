@@ -13,10 +13,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-app.get('/', (req, res) => {
-  res.send(db.users);
-});
-
 app.post('/signin', (req, res) => {
   knex
     .select()
@@ -26,7 +22,17 @@ app.post('/signin', (req, res) => {
       if (users.length > 0) {
         const isUser = bcrypt.compareSync(req.body.password, users[0].hash);
         if (isUser) {
-          res.json('logged in');
+          knex
+            .select()
+            .from('users')
+            .where({ email: users[0].email })
+            .then((user) => {
+              if (user) {
+                res.json(user[0]);
+              } else {
+                res.status(400).json('user not found.');
+              }
+            });
         } else {
           res.status(400).json('wrong credentials.');
         }
@@ -92,7 +98,7 @@ app.put('/image', (req, res) => {
     .increment('entries', 1)
     .then((user) => {
       user.length > 0
-        ? res.json(user[0])
+        ? res.json(user[0].entries)
         : res.status(400).json('User not found');
     })
     .catch((err) => res.status(400).json('Error incrementing entries.'));
