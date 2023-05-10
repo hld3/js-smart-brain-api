@@ -7,6 +7,10 @@ const knex = require('knex')({
   connection: 'postgres://vagrant:vagrant@127.0.0.1:5432/smart-brain',
 });
 
+const { handleRegister } = require('./controllers/register');
+const { handleSignIn } = require('./controllers/signin');
+const { handleImage } = require('./controllers/image');
+
 // console.log(JSON.stringify(knex.client.config.connection));
 
 const app = express();
@@ -14,95 +18,11 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.post('/signin', (req, res) => {
-  knex
-    .select()
-    .from('login')
-    .where({ email: req.body.email })
-    .then((users) => {
-      if (users.length > 0) {
-        const isUser = bcrypt.compareSync(req.body.password, users[0].hash);
-        if (isUser) {
-          knex
-            .select()
-            .from('users')
-            .where({ email: users[0].email })
-            .then((user) => {
-              if (user) {
-                res.json(user[0]);
-              } else {
-                res.status(400).json('user not found.');
-              }
-            });
-        } else {
-          res.status(400).json('wrong credentials.');
-        }
-      } else {
-        res.status(400).json('Error signing in.');
-      }
-    })
-    .catch((err) => console.log('wrong credentials.'));
+  handleSignIn(req, res, knex, bcrypt);
 });
-
-app.post('/register', (req, res) => {
-  const { name, email, password } = req.body;
-  const hash = bcrypt.hashSync(password);
-
-  knex.transaction((trx) => {
-    trx
-      .insert({
-        hash: hash,
-        email: email,
-      })
-      .into('login')
-      .returning('email')
-      .then((loginEmail) => {
-        trx
-          .insert({
-            name: name,
-            email: loginEmail[0].email,
-            joined: new Date(),
-          })
-          .into('users')
-          .returning('*')
-          .then((user) => res.json(user[0]))
-          .catch((err) =>
-            res.status(400).json('There was an error during registration.')
-          );
-      })
-      .then(trx.commit)
-      .catch(trx.rollback);
-  });
-});
-
-app.get('/profile/:id', (req, res) => {
-  let { id } = req.params;
-  id = parseInt(id);
-  knex
-    .select()
-    .from('users')
-    .where({ id })
-    .then((user) => {
-      user.length > 0
-        ? res.json(user[0])
-        : res.status(400).json('User not found.');
-    })
-    .catch((err) => res.status(400).json('Error retrieving user.'));
-});
-
-app.put('/image', (req, res) => {
-  let { id } = req.body;
-  id = parseInt(id);
-  knex('users')
-    .returning('*')
-    .where({ id })
-    .increment('entries', 1)
-    .then((user) => {
-      user.length > 0
-        ? res.json(user[0].entries)
-        : res.status(400).json('User not found');
-    })
-    .catch((err) => res.status(400).json('Error incrementing entries.'));
-});
+app.post('/register', (req, res) => handleRegister(req, res, knex, bcrypt));
+app.get('/profile/:id', (req, res) => handleProfile(req, res, knex));
+app.put('/image', (req, res) => handleImage(req, res, knex));
 
 app.listen(3000, () => {
   console.log('app is running on port 3000');
