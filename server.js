@@ -4,8 +4,7 @@ const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
 const knex = require('knex')({
   client: 'pg',
-  connection:
-    'postgres://smartbrain_8da7_user:4MCkewaa2wdjsL7GTnYl80VaAr2coYq7@dpg-chscchjhp8u4o31dditg-a.ohio-postgres.render.com:5432/smartbrain_8da7?ssl=true',
+  connection: process.env.DB_CONNECTION,
 });
 
 const { handleRegister } = require('./controllers/register');
