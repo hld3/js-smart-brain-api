@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 const USER_ID = 'hld3';
 // Your PAT (Personal Access Token) can be found in the portal under Authentification
 const PAT = '2e4a2196676d4e4f8e0dee0b12b14b62';
@@ -49,6 +51,7 @@ const retrieveImageData = (req, res) => {
     requestOptions(raw)
   )
     .then((response) => response.json())
+    .then((response) => console.log(response))
     .then((response) => res.json(response))
     .catch((err) =>
       console.error('There was an error retrieving the image data', err)
