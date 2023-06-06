@@ -51,7 +51,6 @@ export const retrieveImageData = (req, res) => {
     requestOptions(raw)
   )
     .then((response) => response.json())
-    .then((response) => console.log(response))
     .then((response) => res.json(response))
     .catch((err) =>
       console.error('There was an error retrieving the image data', err)
