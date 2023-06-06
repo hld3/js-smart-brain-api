@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon server.js"
   },
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hld3/js-smart-brain-api.git"

@@ -1,4 +1,4 @@
-const handleSignIn = (req, res, knex, bcrypt) => {
+export const handleSignIn = (req, res, knex, bcrypt) => {
   knex
     .select()
     .from('login')
@@ -26,8 +26,4 @@ const handleSignIn = (req, res, knex, bcrypt) => {
       }
     })
     .catch((err) => console.log('wrong credentials.'));
-};
-
-module.exports = {
-  handleSignIn: handleSignIn,
 };

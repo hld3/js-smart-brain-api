@@ -1,28 +1,27 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const bcrypt = require('bcrypt-nodejs');
-const cors = require('cors');
-const knex = require('knex')({
-  client: 'pg',
-  connection: process.env.DB_CONNECTION,
-});
+import bcrypt from 'bcrypt-nodejs';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import express from 'express';
+import knex from 'knex';
 
-const { handleRegister } = require('./controllers/register');
-const { handleSignIn } = require('./controllers/signin');
-const { handleImage, retrieveImageData } = require('./controllers/image');
+const db = knex(process.env.DB_CONNECTION);
 
-console.log(JSON.stringify(knex.client.config.connection));
+import { handleImage, retrieveImageData } from './controllers/image.js';
+import { handleRegister } from './controllers/register.js';
+import { handleSignIn } from './controllers/signin.js';
+
+console.log(JSON.stringify(db.client.config.connection));
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
 app.post('/signin', (req, res) => {
-  handleSignIn(req, res, knex, bcrypt);
+  handleSignIn(req, res, db, bcrypt);
 });
-app.post('/register', (req, res) => handleRegister(req, res, knex, bcrypt));
-app.get('/profile/:id', (req, res) => handleProfile(req, res, knex));
-app.put('/image', (req, res) => handleImage(req, res, knex));
+app.post('/register', (req, res) => handleRegister(req, res, db, bcrypt));
+app.get('/profile/:id', (req, res) => handleProfile(req, res, db));
+app.put('/image', (req, res) => handleImage(req, res, db));
 app.post('/image_data', (req, res) => retrieveImageData(req, res));
 
 app.listen(3000, () => {

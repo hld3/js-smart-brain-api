@@ -38,7 +38,7 @@ const requestOptions = (raw) => {
   };
 };
 
-const retrieveImageData = (req, res) => {
+export const retrieveImageData = (req, res) => {
   IMAGE_URL = req.body.input;
   const raw = constructRaw();
 
@@ -58,7 +58,7 @@ const retrieveImageData = (req, res) => {
     );
 };
 
-const handleImage = (req, res, knex) => {
+export const handleImage = (req, res, knex) => {
   let { id } = req.body;
   id = parseInt(id);
   knex('users')
@@ -71,9 +71,4 @@ const handleImage = (req, res, knex) => {
         : res.status(400).json('User not found');
     })
     .catch((err) => res.status(400).json('Error incrementing entries.'));
-};
-
-module.exports = {
-  handleImage,
-  retrieveImageData,
 };
